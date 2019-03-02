@@ -17,8 +17,8 @@ env.layout = zeros(env.rowDim, env.colDim);
 env.layout(end,2:end-1) = -1;
 env.layout(1,2) = 1;  % Obstacle
 
-env.startState = [1, 1];
-env.endState = [10, 10];
+env.startState = [1, 1, -1];
+env.endState = [10, 10, -1];
 
 % Action space
 env.actions = [0, 1;        % Right, 1
@@ -31,3 +31,4 @@ env.actions = [0, 1;        % Right, 1
 env.stepReward = -1;
 env.cliffReward = -100;
 
+[nextState, reward] = env.stepAgent(env.startState, 4)
