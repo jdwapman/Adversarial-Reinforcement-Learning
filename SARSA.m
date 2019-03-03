@@ -7,8 +7,8 @@ alg.gamma = 1;  % No discounting
 
 alg.numEpisodes = 100;
 
-alg.Q_agent = zeros(env.rowDim, env.colDim, env.numActions);
-alg.Q_adversary = zeros(env.rowDim, env.colDim, env.numActions);
+alg.Q_agent = zeros(env.rowDim, env.colDim, env.numAgentActions());
+alg.Q_adversary = zeros(env.rowDim, env.colDim, env.numAgentActions());
 
 alg.n = 1;
 

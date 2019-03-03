@@ -10,7 +10,8 @@ classdef environment
         startState
         endState
         
-        actions
+        agentActions
+        adversaryActions
         
         stepReward  % Agent's reward for each time step where it has not reached the edge
         cliffReward % Agent's reward for falling off a cliff
@@ -20,35 +21,51 @@ classdef environment
         function obj = environment()
         end
         
-        function[count] = numActions(obj)
-            count = size(obj.actions,1);
+        function[count] = numAgentActions(obj)
+            count = size(obj.agentActions,1);
         end
         
-        function [nextState, reward] = stepAgent(obj, state, actionNum)
+        function[count] = numAdversaryActions(obj)
+            count = size(obj.adversaryActions,1);
+        end
+        
+        function [nextState, reward, done] = stepAgent(obj, state, actionNum)
             %step Determine the agent's next state
             %   Detailed explanation goes here
-            nextState = [state(1:2) + obj.actions(actionNum,:), actionNum];
+            nextState = [state(1:2) + obj.agentActions(actionNum,:), actionNum];
             
             reward = obj.stepReward; % Default
             
             % Check if the agent has gone off a cliff
             if obj.inTrap(nextState)
                 reward =  obj.cliffReward;
+                nextState = obj.startState;
+            end
+            
+            done = 0;
+            if nextState(1:2) == obj.endState(1:2)
+               done = 1; 
             end
         end
         
-        function [nextState, reward] = stepAdversary(obj, state, actionNum)
+        function [nextState, reward, done] = stepAdversary(obj, state, actionNum)
             %step Determine the agent's next state and return the reward
             %   After the agent moves, the adversary can apply an action to
             %   modify the agent's state. The reward is evaluated after
             %   both actors have completed their action.
-            nextState = [state(1:2) + obj.actions(actionNum,:), actionNum];
+            nextState = [state(1:2) + obj.adversaryActions(actionNum,:), actionNum];
             
-            reward = obj.stepReward; % Default
+            reward = -obj.stepReward; % Default
             
             % Check if the agent has gone off a cliff
             if obj.inTrap(nextState)
-                reward =  obj.cliffReward;
+                reward =  -obj.cliffReward;
+                nextState = obj.startState;
+            end
+            
+            done = 0;
+            if nextState(1:2) == obj.endState(1:2)
+               done = 1; 
             end
         end
         
@@ -61,11 +78,11 @@ classdef environment
         end
         
         function[actions] = validActionsAgent(obj,state)
-            nextStates = state(1:2) + obj.actions;
+            nextStates = state(1:2) + obj.agentActions;
             
             actions = [];
             
-            for i = 1:1:obj.numActions
+            for i = 1:1:obj.numAgentActions()
                 if ~obj.blocked(nextStates(i,:))
                     actions = [actions, i];
                 end
@@ -82,9 +99,12 @@ classdef environment
             
             % Find the opposite action
             action = state(3);
-            opposites = [2,1,4,3];
+            opposites = [2,1,4,3,0];
             opposite = opposites(action);
-            actions(actions == opposite) = [];
+            
+            if opposite ~= 0
+                actions(actions == opposite) = [];
+            end
         end
         
         function[isBlocked] = blocked(obj, state)
