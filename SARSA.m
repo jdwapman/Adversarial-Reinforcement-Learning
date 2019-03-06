@@ -1,22 +1,23 @@
 function[] = SARSA(env)
 runRewards = [];
-for numRuns = 1:1:10
+for numRuns = 1:1:50
 % Algorithm Parameters
 alg.alpha = 0.5;
 alg.eps = 0.1;
 alg.gamma = 1;  % No discounting
 
-alg.numEpisodes = 200;
+alg.numEpisodes = 300;
 
 alg.Q_agent = zeros(env.rowDim, env.colDim, env.numAgentActions());
-alg.Q_adversary = zeros(env.rowDim, env.colDim, env.numAdversaryActions());
+alg.Q_adversary = zeros(env.rowDim, env.colDim, env.numAgentActions(), env.numAdversaryActions());
 
 alg.n = 1;
 
 % Start the episode
 totalRewards = [];
+numRuns
 for epNum = 1:1:alg.numEpisodes
-    epNum
+    
     
     % Initialize and store S0 != terminal
     state = env.startState;
@@ -37,7 +38,7 @@ for epNum = 1:1:alg.numEpisodes
         % Adversary's turn to modify the position
         if agentDone % Do nothing
             advNextState = agentNextState;
-            advReward = agentReward;
+            advReward = -agentReward;
             advDone = agentDone;
         else
             advActionNum = getAdversaryAction(env, alg, agentNextState);
@@ -51,6 +52,7 @@ for epNum = 1:1:alg.numEpisodes
         % Observe and store the next reward as Rt+1 and the next state as
         % S_t+1
         agentStates = [agentStates; advNextState];  % Update with state it's moved to
+        agentStates(end,3) = agentActionNum;
         agentActions = [agentActions; agentActionNum];
         agentRewards = [agentRewards; -advReward];
         
@@ -65,8 +67,9 @@ for epNum = 1:1:alg.numEpisodes
         % Wind's next action depends on the agent's next state
         moveAgentState = env.stepAgent(advNextState, agentActionNumNext);
         advActionNumNext = getAdversaryAction(env,alg,moveAgentState);
-        advActionValNext = alg.Q_adversary(moveAgentState(1), moveAgentState(2), advActionNumNext);
+        advActionValNext = alg.Q_adversary(moveAgentState(1), moveAgentState(2), moveAgentState(3), advActionNumNext);
         
+
         
         alg.Q_agent(state(1), state(2), agentActionNum) = ...
             alg.Q_agent(state(1), state(2), agentActionNum) + ...
@@ -74,22 +77,27 @@ for epNum = 1:1:alg.numEpisodes
             (-advReward + alg.gamma * agentActionValNext - ...
             alg.Q_agent(state(1), state(2), agentActionNum));
         
-        alg.Q_adversary(state(1), state(2), advActionNum) = ...
-            alg.Q_adversary(state(1), state(2), advActionNum) + ...
+        alg.Q_adversary(agentNextState(1), agentNextState(2), agentNextState(3), advActionNum) = ...
+            alg.Q_adversary(agentNextState(1), agentNextState(2), agentNextState(3), advActionNum) + ...
             alg.alpha * ...
             (advReward + alg.gamma * advActionValNext - ...
-            alg.Q_adversary(state(1), state(2), advActionNum));
+            alg.Q_adversary(agentNextState(1), agentNextState(2), agentNextState(3), advActionNum));
         
         state = advNextState;
+        state(3) = agentActionNum;
         
         % Make sure terminal state stays at 0
         alg.Q_agent(env.endState(1), env.endState(2), :) = 0;
-        alg.Q_adv(env.endState(1), env.endState(2), :) = 0;
+        alg.Q_adversary(env.endState(1), env.endState(2), :, :) = 0;
         
         if agentDone || advDone
            break 
         end
     end
+    
+%     if sum(agentRewards < -50) && (epNum > 250)
+%         asdf = 1
+%     end
     
     totalRewards = [totalRewards; sum(agentRewards)];
     
@@ -133,7 +141,7 @@ greedy = binornd(1, 1-alg.eps);
 actions = env.validActionsAdversary(state);
 
 % Choose A from S using policy derived from Q (eps-greedy)
-currQ = alg.Q_adversary(state(1), state(2), actions);
+currQ = alg.Q_adversary(state(1), state(2), state(3), actions);
 
 % Take the greedy action with probability 1-epsilon
 greedy = binornd(1, 1-alg.eps);
