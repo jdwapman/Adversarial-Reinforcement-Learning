@@ -92,7 +92,9 @@ classdef environment
         function[actions] = validActionsAdversary(obj,state)
             % First, find where it is possible for the agent to move
             % (within bounds and not into an obstacle)
-            actions = obj.validActionsAgent(state)
+            actions = obj.validActionsAgent(state);
+            
+            actions = [actions, 5];
             
             % Next, the wind cannot move the agent against its last
             % direction of motion
