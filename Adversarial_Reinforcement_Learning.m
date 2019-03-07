@@ -13,9 +13,11 @@ env.rowDim = 5;
 env.colDim = 5;
 env.layout = zeros(env.rowDim, env.colDim);
 
-% Add a cliff at the bottom row
-% env.layout(end,2:end-1) = -1;
+% Add a trap in the middle
+env.layout(3,3) = -1;
 %env.layout(1,5) = 1;  % Obstacle
+
+
 
 env.startState = [1, 1, 1];
 env.endState = [5, 5, 1];
@@ -44,6 +46,10 @@ env.stepReward = -1;
 env.cliffReward = -100;
 
 %% SARSA
-SARSA(env);
+sarsaResults = SARSA(env, 1, 1);
+
+%% Evaluate stored parameters
+sarsaResults.eps = 0;
+output = SARSAeval(env, sarsaResults, 0);
 
 load("Results.mat")
