@@ -8,12 +8,12 @@ close all
 env = environment();
 
 % Cliff environment
-env.rowDim = 4;
-env.colDim = 12;
-env.layout = zeros(env.rowDim, env.colDim);
-env.startState = [4, 1, 3];  % Up
-env.endState = [4, 12, 1];
-env.layout(4,2:end-1) = -1;
+% env.rowDim = 4;
+% env.colDim = 12;
+% env.layout = zeros(env.rowDim, env.colDim);
+% env.startState = [4, 1, 3];  % Up
+% env.endState = [4, 12, 1];
+% env.layout(4,2:end-1) = -1;
 
 % Line environment
 % env.rowDim = 3;
@@ -23,12 +23,12 @@ env.layout(4,2:end-1) = -1;
 % env.endState = [2, 20, 1];
 
 % Pit environment
-% env.rowDim = 5;
-% env.colDim = 5;
-% env.layout = zeros(env.rowDim, env.colDim);
-% env.layout(3,3) = -1;
-% env.startState = [1, 1, 1];  % Up
-% env.endState = [5, 5, 1];
+env.rowDim = 9;
+env.colDim = 9;
+env.layout = zeros(env.rowDim, env.colDim);
+%env.layout(5,5) = -1;
+env.startState = [1, 1, 1];  % Up
+env.layout(end-1:end,end-1:end) = 2;  % End state
 
 
 % Action space
@@ -55,7 +55,7 @@ env.stepReward = -1;
 env.cliffReward = -100;
 
 numRuns = 1;
-numEpisodes = 1000;
+numEpisodes = 2000;
 
 %% Q-Learning
 % qLearningResults = QLearning(env,1,1, numRuns, numEpisodes);
@@ -65,7 +65,7 @@ numEpisodes = 1000;
 
 %% SARSA
 
-sarsaResults = SARSA(env, 1, 1, numRuns, numEpisodes);
+sarsaResults = SARSA(env, 1, 0, numRuns, numEpisodes);
 
 % trainedAdv = SARSA(env, alg, 1,1, numRuns, numEpisodes);
 %% Evaluate

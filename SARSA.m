@@ -2,7 +2,7 @@ function[alg] = SARSA(env, trainAgent, trainAdversary, numRuns, numEpisodes)
 runRewards = [];
 for runNum = 1:1:numRuns
     % Algorithm Parameters
-    alg.alpha = 0.5;
+    alg.alpha = 0.2;
     alg.eps = 0.1;
     alg.gamma = 1;  % No discounting
     
@@ -96,8 +96,10 @@ for runNum = 1:1:numRuns
             state(3) = agentActionNum;
             
             % Make sure terminal state stays at 0
-            alg.Q_agent(env.endState(1), env.endState(2), :) = 0;
-            alg.Q_adversary(env.endState(1), env.endState(2), :, :) = 0;
+            alg.Q_agent(env.layout == 2) = 0;
+            alg.Q_agent(env.layout == 2) = 0;
+            %alg.Q_agent(env.endState(1), env.endState(2), :) = 0;
+            %alg.Q_adversary(env.endState(1), env.endState(2), :, :) = 0;
             
             if agentDone || advDone
                 agentStates = [agentStates; state];  % Update with state it's moved to

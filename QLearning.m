@@ -126,6 +126,7 @@ for runNum = 1:1:numRuns
 end
 alg.runRewards = runRewards;
 figure
+
 plot(mean(runRewards,2))
 title("Q Learning")
 ylim([-100,0])

@@ -43,7 +43,7 @@ classdef environment
             end
             
             done = 0;
-            if nextState(1:2) == obj.endState(1:2)
+            if obj.layout(nextState(1), nextState(2)) == 2
                done = 1; 
             end
         end
@@ -64,7 +64,7 @@ classdef environment
             end
             
             done = 0;
-            if nextState(1:2) == obj.endState(1:2)
+            if obj.layout(nextState(1), nextState(2)) == 2
                done = 1; 
             end
         end
