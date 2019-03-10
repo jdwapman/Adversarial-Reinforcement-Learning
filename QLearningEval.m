@@ -1,7 +1,4 @@
-function [results] = SARSAeval(env, alg, useAdversary)
-%UNTITLED6 Summary of this function goes here
-%   Detailed explanation goes here
-
+function[results] = QLearning(env, alg, useAdversary)
 
 % Initialize and store S0 != terminal
 state = env.startState;
@@ -16,8 +13,6 @@ advRewards = [0];
 
 numSteps = 0;
 while 1
-    
-    
     % Take action At
     agentActionNum = getAgentAction(env, alg, state);
     [agentNextState, agentReward, agentDone] = env.stepAgent(state, agentActionNum);
@@ -31,7 +26,7 @@ while 1
         advActionNum = getAdversaryAction(env, alg, agentNextState);
         
         if ~useAdversary
-            advActionNum = 5;
+            advActionNum = 5;  % No change in agent's pos
         end
         
         [advNextState, advReward, advDone] = env.stepAdversary(agentNextState, advActionNum);
@@ -50,16 +45,24 @@ while 1
     agentActions = [agentActions; agentActionNum];
     agentRewards = [agentRewards; -advReward];
     
-    
     advActions = [advActions; advActionNum];
     advRewards = [advRewards; advReward];
     
+    % Agent is now in the advNextState location
+    agentActionNumNext = getAgentAction(env,alg,advNextState);
+    agentActionValNext = alg.Q_agent(advNextState(1), advNextState(2), agentActionNumNext);
+    
+    % Wind's next action depends on the agent's next state
+    moveAgentState = env.stepAgent(advNextState, agentActionNumNext);
+    advActionNumNext = getAdversaryAction(env,alg,moveAgentState);
+    advActionValNext = alg.Q_adversary(moveAgentState(1), moveAgentState(2), moveAgentState(3), advActionNumNext);
+       
     state = advNextState;
     state(3) = agentActionNum;
     
     numSteps = numSteps + 1;
     if numSteps == 1000
-       break; 
+        break;
     end
     
     if agentDone || advDone
@@ -69,6 +72,7 @@ while 1
         break
     end
 end
+
 results.agentStates = agentStates;
 results.agentRewards = agentRewards;
 results.agentActions = agentActions;
@@ -125,4 +129,3 @@ end
 chosenAction = actions(validActionNum);
 
 end
-

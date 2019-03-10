@@ -1,11 +1,10 @@
-function[alg] = SARSA(env, trainAgent, trainAdversary, numRuns, numEpisodes)
+function[alg] = QLearning(env, trainAgent, trainAdversary, numRuns, numEpisodes)
 runRewards = [];
 for runNum = 1:1:numRuns
     % Algorithm Parameters
     alg.alpha = 0.5;
     alg.eps = 0.1;
     alg.gamma = 1;  % No discounting
-    
     
     alg.Q_agent = zeros(env.rowDim, env.colDim, env.numAgentActions());
     alg.Q_adversary = zeros(env.rowDim, env.colDim, env.numAgentActions(), env.numAdversaryActions());
@@ -58,25 +57,33 @@ for runNum = 1:1:numRuns
             agentStates = [agentStates; state];  % Update with state it's moved to
             agentStates(end,3) = agentActionNum;
             advStates = [advStates; agentNextState];
-             
+       
             agentActions = [agentActions; agentActionNum];
-            agentRewards = [agentRewards; -advReward];
-            
+            agentRewards = [agentRewards; -advReward];            
             
             advActions = [advActions; advActionNum];
             advRewards = [advRewards; advReward];
             
             % Agent is now in the advNextState location
-            agentActionNumNext = getAgentAction(env,alg,advNextState);
-            agentActionValNext = alg.Q_agent(advNextState(1), advNextState(2), agentActionNumNext);
+            agentAllowedActions = env.validActionsAgent(advNextState);
+            [agentActionValNext, agentActionIdxNext] = max(alg.Q_agent(advNextState(1), advNextState(2),agentAllowedActions));
+            agentActionNumNext = agentAllowedActions(agentActionIdxNext);
+            
+%             agentActionNumNext = getAgentAction(env,alg,advNextState);
+%             agentActionValNext = alg.Q_agent(advNextState(1), advNextState(2), agentActionNumNext);
             
             % Wind's next action depends on the agent's next state
             moveAgentState = env.stepAgent(advNextState, agentActionNumNext);
-            advActionNumNext = getAdversaryAction(env,alg,moveAgentState);
-            advActionValNext = alg.Q_adversary(moveAgentState(1), moveAgentState(2), moveAgentState(3), advActionNumNext);
+            advAllowedActions = env.validActionsAdversary(moveAgentState);
+            [advActionValNext, advActionIdxNext] = max(alg.Q_adversary(moveAgentState(1), moveAgentState(2),moveAgentState(3),advAllowedActions));
             
+%             advActionNumNext = getAdversaryAction(env,alg,moveAgentState);
+%             advActionValNext = alg.Q_adversary(moveAgentState(1), moveAgentState(2), moveAgentState(3), advActionNumNext);
+%             
             
             if trainAgent
+                
+                
                 alg.Q_agent(state(1), state(2), agentActionNum) = ...
                     alg.Q_agent(state(1), state(2), agentActionNum) + ...
                     alg.alpha * ...
@@ -117,9 +124,10 @@ for runNum = 1:1:numRuns
     
     runRewards = [runRewards totalRewards];
 end
+alg.runRewards = runRewards;
 figure
 plot(mean(runRewards,2))
-title("SARSA")
+title("Q Learning")
 ylim([-100,0])
 save("Results.mat")
 
