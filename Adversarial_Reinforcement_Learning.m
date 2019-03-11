@@ -16,19 +16,19 @@ env = environment();
 % env.layout(4,2:end-1) = -1;
 
 % Line environment
-% env.rowDim = 3;
-% env.colDim = 20;
+% env.rowDim = 1;
+% env.colDim = 10;
 % env.layout = zeros(env.rowDim, env.colDim);
-% env.startState = [2, 1, 1];  % Up
-% env.endState = [2, 20, 1];
+% env.startState = [1, 1, 1];  % Up
+% env.layout(1,end) = 2;
 
 % Pit environment
 env.rowDim = 9;
 env.colDim = 9;
 env.layout = zeros(env.rowDim, env.colDim);
-%env.layout(5,5) = -1;
-env.startState = [1, 1, 1];  % Up
-env.layout(end-1:end,end-1:end) = 2;  % End state
+env.layout(5,5) = -1;
+env.startState = [5, 1, 1];  % Up
+env.layout(:,end) = 2;  % End state
 
 
 % Action space
@@ -55,19 +55,38 @@ env.stepReward = -1;
 env.cliffReward = -100;
 
 numRuns = 1;
-numEpisodes = 2000;
+numEpisodes = 4000;
 
 %% Q-Learning
-% qLearningResults = QLearning(env,1,1, numRuns, numEpisodes);
-% % Evaluate
+% qLearningResults = QLearning(env,1,0, numRuns, numEpisodes);
+
+%% Evaluate
 % qLearningResults.eps = 0;
-% results = QLearningEval(env,qLearningResults,1);
+% results = QLearningEval(env,qLearningResults,0);
 
 %% SARSA
 
-sarsaResults = SARSA(env, 1, 0, numRuns, numEpisodes);
+trainAgent = 1;
+trainAdversary = 0;
+useAdversary = 0;
 
-% trainedAdv = SARSA(env, alg, 1,1, numRuns, numEpisodes);
+% Initialize untrained actors
+qAgent = zeros(env.rowDim, env.colDim, env.numAgentActions());
+qAdv = zeros(env.rowDim, env.colDim, env.numAgentActions(), env.numAdversaryActions());
+
+% Train the agent
+numRuns = 1;
+numEpisodes = 1000;
+sarsaResults = SARSA(env, qAgent, qAdv, trainAgent, trainAdversary, useAdversary, numRuns, numEpisodes);
+trainedAgent = sarsaResults.Q_agent;
+
+% Train the adversary and agent
+trainAgent = 1;
+trainAdversary = 1;
+useAdversary = 1;
+numEpisodes = 10000;
+sarsaResults = SARSA(env, trainedAgent, qAdv, trainAgent, trainAdversary, useAdversary, numRuns, numEpisodes);
+
 %% Evaluate
 sarsaResults.eps = 0;
 output = SARSAeval(env, sarsaResults, 1);

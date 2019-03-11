@@ -1,4 +1,4 @@
-function[alg] = SARSA(env, trainAgent, trainAdversary, numRuns, numEpisodes)
+function[alg] = SARSA(env, qAgent, qAdv, trainAgent, trainAdversary, useAdversary, numRuns, numEpisodes)
 runRewards = [];
 for runNum = 1:1:numRuns
     % Algorithm Parameters
@@ -7,8 +7,12 @@ for runNum = 1:1:numRuns
     alg.gamma = 1;  % No discounting
     
     
-    alg.Q_agent = zeros(env.rowDim, env.colDim, env.numAgentActions());
-    alg.Q_adversary = zeros(env.rowDim, env.colDim, env.numAgentActions(), env.numAdversaryActions());
+%     alg.Q_agent = zeros(env.rowDim, env.colDim, env.numAgentActions());
+%     alg.Q_adversary = zeros(env.rowDim, env.colDim, env.numAgentActions(), env.numAdversaryActions());
+    
+    alg.Q_agent = qAgent;
+    alg.Q_adversary = qAdv;
+    
     
     alg.n = 1;
     
@@ -42,7 +46,7 @@ for runNum = 1:1:numRuns
             else
                 advActionNum = getAdversaryAction(env, alg, agentNextState);
                 
-                if ~trainAdversary
+                if ~useAdversary
                    advActionNum = 5;  % No change in agent's pos 
                 end
                 
@@ -97,7 +101,7 @@ for runNum = 1:1:numRuns
             
             % Make sure terminal state stays at 0
             alg.Q_agent(env.layout == 2) = 0;
-            alg.Q_agent(env.layout == 2) = 0;
+            alg.Q_adversary(env.layout == 2) = 0;
             %alg.Q_agent(env.endState(1), env.endState(2), :) = 0;
             %alg.Q_adversary(env.endState(1), env.endState(2), :, :) = 0;
             
@@ -124,6 +128,7 @@ plot(mean(runRewards,2))
 title("SARSA")
 ylim([-100,0])
 save("Results.mat")
+alg.runRewards = runRewards;
 
 end
 

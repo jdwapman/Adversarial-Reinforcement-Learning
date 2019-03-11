@@ -103,9 +103,11 @@ for runNum = 1:1:numRuns
             state(3) = agentActionNum;
             
             % Make sure terminal state stays at 0
-            alg.Q_agent(env.endState(1), env.endState(2), :) = 0;
-            alg.Q_adversary(env.endState(1), env.endState(2), :, :) = 0;
-            
+            alg.Q_agent(env.layout == 2) = 0;
+            alg.Q_adversary(env.layout == 2) = 0;
+%             alg.Q_agent(env.endState(1), env.endState(2), :) = 0;
+%             alg.Q_adversary(env.endState(1), env.endState(2), :, :) = 0;
+%             
             if agentDone || advDone
                 agentStates = [agentStates; state];  % Update with state it's moved to
                 agentStates(end,3) = agentActionNum;
