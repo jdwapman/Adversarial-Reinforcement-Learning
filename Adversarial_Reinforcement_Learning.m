@@ -23,14 +23,22 @@ env = environment();
 % env.layout(1,end) = 2;
 
 % Pit environment
-env.rowDim = 9;
+env.rowDim = 6;
 env.colDim = 9;
 env.layout = zeros(env.rowDim, env.colDim);
-env.layout(5,5) = -1;
-env.startState = [5, 1, 1];  % Up
+env.layout(6,5) = -1;
+env.startState = [1, 1, 1];  % Up
 env.layout(:,end) = 2;  % End state
 
+% Split environment
+env.rowDim = 7;
+env.colDim = 5;
+env.layout = zeros(env.rowDim, env.colDim);
 
+env.startState = [1, 1, 1];  % Up
+env.layout(:,end) = 2;  % End state
+env.layout(2,3) = 1;
+env.layout(2:4,3:4) = 1;
 % Action space
 env.agentActions = [0, 1;        % Right, 1
                     0, -1;       % Left,  2
@@ -66,29 +74,55 @@ numEpisodes = 4000;
 
 %% SARSA
 
-trainAgent = 1;
-trainAdversary = 0;
-useAdversary = 0;
+% trainAgent = 1;
+% trainAdversary = 0;
+% useAdversary = 0;
+% 
+% % Initialize untrained actors
+% qAgent = zeros(env.rowDim, env.colDim, env.numAgentActions());
+% qAdv = zeros(env.rowDim, env.colDim, env.numAgentActions(), env.numAdversaryActions());
+% 
+% % Train the agent
+% numRuns = 1;
+% numEpisodes = 4000;
+% sarsaResults = SARSA(env, qAgent, qAdv, trainAgent, trainAdversary, useAdversary, numRuns, numEpisodes);
+% trainedAgent = sarsaResults.Q_agent;
+% 
+% 
+%% Evaluate
+% sarsaResults.eps = 0;
+% output = SARSAeval(env, sarsaResults, 1);
+
+%% Iteration
 
 % Initialize untrained actors
 qAgent = zeros(env.rowDim, env.colDim, env.numAgentActions());
 qAdv = zeros(env.rowDim, env.colDim, env.numAgentActions(), env.numAdversaryActions());
 
-% Train the agent
+rewards = [];
+for i = 1:1:1000
+i
+% First, alternate training
+numEpisodes = 1;
 numRuns = 1;
-numEpisodes = 1000;
-sarsaResults = SARSA(env, qAgent, qAdv, trainAgent, trainAdversary, useAdversary, numRuns, numEpisodes);
-trainedAgent = sarsaResults.Q_agent;
 
-% Train the adversary and agent
+% Only train the agent
 trainAgent = 1;
+trainAdversary = 0;
+useAdversary = 1;
+sarsaResultsAgent = SARSA(env, qAgent, qAdv, trainAgent, trainAdversary, useAdversary, numRuns, numEpisodes, 0);
+qAgent = sarsaResultsAgent.Q_agent;
+
+rewards = [rewards; sarsaResultsAgent.runRewards];
+
+% Only train the adversary
+trainAgent = 0;
 trainAdversary = 1;
 useAdversary = 1;
-numEpisodes = 10000;
-sarsaResults = SARSA(env, trainedAgent, qAdv, trainAgent, trainAdversary, useAdversary, numRuns, numEpisodes);
+sarsaResultsAdv = SARSA(env, qAgent, qAdv, trainAgent, trainAdversary, useAdversary, numRuns, numEpisodes, 0);
+qAdv = sarsaResultsAdv.Q_adversary;
+end
 
 %% Evaluate
 sarsaResults.eps = 0;
-output = SARSAeval(env, sarsaResults, 1);
-
-load("Results.mat")
+output = SARSAeval(env, sarsaResultsAgent, 1);

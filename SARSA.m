@@ -1,8 +1,8 @@
-function[alg] = SARSA(env, qAgent, qAdv, trainAgent, trainAdversary, useAdversary, numRuns, numEpisodes)
+function[alg] = SARSA(env, qAgent, qAdv, trainAgent, trainAdversary, useAdversary, numRuns, numEpisodes, shouldPlot)
 runRewards = [];
 for runNum = 1:1:numRuns
     % Algorithm Parameters
-    alg.alpha = 0.2;
+    alg.alpha = 0.5;
     alg.eps = 0.1;
     alg.gamma = 1;  % No discounting
     
@@ -18,7 +18,7 @@ for runNum = 1:1:numRuns
     
     % Start the episode
     totalRewards = [];
-    runNum
+    %runNum
     for epNum = 1:1:numEpisodes
         
         
@@ -123,11 +123,13 @@ for runNum = 1:1:numRuns
     
     runRewards = [runRewards totalRewards];
 end
-figure
-plot(mean(runRewards,2))
-title("SARSA")
-ylim([-100,0])
-save("Results.mat")
+if shouldPlot
+    figure
+    plot(mean(runRewards,2))
+    title("SARSA")
+    ylim([-100,0])
+end
+%save("Results.mat")
 alg.runRewards = runRewards;
 
 end
