@@ -1,0 +1,442 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>QLearning</title><meta name="generator" content="MATLAB 9.5"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-03-17"><meta name="DC.source" content="QLearning.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><pre class="codeinput"><span class="keyword">function</span>[alg] = QLearning(env, qAgent, qAdv, trainAgent, trainAdversary, useAdversary, numRuns, numEpisodes)
+runRewards = [];
+<span class="keyword">for</span> runNum = 1:1:numRuns
+    <span class="comment">% Algorithm Parameters</span>
+    alg.alpha = 0.5;
+    alg.eps = 0.1;
+    alg.gamma = 1;  <span class="comment">% No discounting</span>
+
+    alg.Q_agent = qAgent;
+    alg.Q_adversary = qAdv;
+
+    alg.n = 1;
+
+    <span class="comment">% Start the episode</span>
+    totalRewards = [];
+    runNum
+    <span class="keyword">for</span> epNum = 1:1:numEpisodes
+
+
+        <span class="comment">% Initialize and store S0 != terminal</span>
+        state = env.startState;
+
+        agentStates = [];
+        agentActions = [];
+        agentRewards = [0];
+
+        advStates = [];
+        advActions = [];
+        advRewards = [0];
+
+        <span class="keyword">while</span> 1
+            <span class="comment">% Take action At</span>
+            agentActionNum = getAgentAction(env, alg, state);
+            [agentNextState, agentReward, agentDone] = env.stepAgent(state, agentActionNum);
+
+            <span class="comment">% Adversary's turn to modify the position</span>
+            <span class="keyword">if</span> agentDone <span class="comment">% Do nothing</span>
+                advNextState = agentNextState;
+                advReward = -agentReward;
+                advDone = agentDone;
+            <span class="keyword">else</span>
+                advActionNum = getAdversaryAction(env, alg, agentNextState);
+
+                <span class="keyword">if</span> ~useAdversary
+                   advActionNum = 5;  <span class="comment">% No change in agent's pos</span>
+                <span class="keyword">end</span>
+
+                [advNextState, advReward, advDone] = env.stepAdversary(agentNextState, advActionNum);
+            <span class="keyword">end</span>
+
+            <span class="keyword">if</span> agentReward == -100
+                advReward = 100;
+            <span class="keyword">end</span>
+
+            <span class="comment">% Observe and store the next reward as Rt+1 and the next state as</span>
+            <span class="comment">% S_t+1</span>
+            agentStates = [agentStates; state];  <span class="comment">% Update with state it's moved to</span>
+            agentStates(end,3) = agentActionNum;
+            advStates = [advStates; agentNextState];
+
+            agentActions = [agentActions; agentActionNum];
+            agentRewards = [agentRewards; -advReward];
+
+            advActions = [advActions; advActionNum];
+            advRewards = [advRewards; advReward];
+
+            <span class="comment">% Agent is now in the advNextState location</span>
+            agentAllowedActions = env.validActionsAgent(advNextState);
+            [agentActionValNext, agentActionIdxNext] = max(alg.Q_agent(advNextState(1), advNextState(2),agentAllowedActions));
+            agentActionNumNext = agentAllowedActions(agentActionIdxNext);
+
+<span class="comment">%             agentActionNumNext = getAgentAction(env,alg,advNextState);</span>
+<span class="comment">%             agentActionValNext = alg.Q_agent(advNextState(1), advNextState(2), agentActionNumNext);</span>
+
+            <span class="comment">% Wind's next action depends on the agent's next state</span>
+            moveAgentState = env.stepAgent(advNextState, agentActionNumNext);
+            advAllowedActions = env.validActionsAdversary(moveAgentState);
+            [advActionValNext, advActionIdxNext] = max(alg.Q_adversary(moveAgentState(1), moveAgentState(2),moveAgentState(3),advAllowedActions));
+
+<span class="comment">%             advActionNumNext = getAdversaryAction(env,alg,moveAgentState);</span>
+<span class="comment">%             advActionValNext = alg.Q_adversary(moveAgentState(1), moveAgentState(2), moveAgentState(3), advActionNumNext);</span>
+<span class="comment">%</span>
+
+            <span class="keyword">if</span> trainAgent
+
+
+                alg.Q_agent(state(1), state(2), agentActionNum) = <span class="keyword">...</span>
+                    alg.Q_agent(state(1), state(2), agentActionNum) + <span class="keyword">...</span>
+                    alg.alpha * <span class="keyword">...</span>
+                    (-advReward + alg.gamma * agentActionValNext - <span class="keyword">...</span>
+                    alg.Q_agent(state(1), state(2), agentActionNum));
+            <span class="keyword">end</span>
+
+            <span class="keyword">if</span> trainAdversary
+                alg.Q_adversary(agentNextState(1), agentNextState(2), agentNextState(3), advActionNum) = <span class="keyword">...</span>
+                    alg.Q_adversary(agentNextState(1), agentNextState(2), agentNextState(3), advActionNum) + <span class="keyword">...</span>
+                    alg.alpha * <span class="keyword">...</span>
+                    (advReward + alg.gamma * advActionValNext - <span class="keyword">...</span>
+                    alg.Q_adversary(agentNextState(1), agentNextState(2), agentNextState(3), advActionNum));
+            <span class="keyword">end</span>
+
+            state = advNextState;
+            state(3) = agentActionNum;
+
+            <span class="comment">% Make sure terminal state stays at 0</span>
+            alg.Q_agent(env.layout == 2) = 0;
+            alg.Q_adversary(env.layout == 2) = 0;
+<span class="comment">%             alg.Q_agent(env.endState(1), env.endState(2), :) = 0;</span>
+<span class="comment">%             alg.Q_adversary(env.endState(1), env.endState(2), :, :) = 0;</span>
+<span class="comment">%</span>
+            <span class="keyword">if</span> agentDone || advDone
+                agentStates = [agentStates; state];  <span class="comment">% Update with state it's moved to</span>
+                agentStates(end,3) = agentActionNum;
+                advStates = [advStates; agentNextState];
+                <span class="keyword">break</span>
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+
+
+        totalRewards = [totalRewards; sum(agentRewards)];
+
+    <span class="keyword">end</span>
+
+    runRewards = [runRewards totalRewards];
+<span class="keyword">end</span>
+alg.runRewards = runRewards;
+figure
+
+plot(mean(runRewards,2))
+title(<span class="string">"Q Learning"</span>)
+ylim([-100,0])
+save(<span class="string">"Results.mat"</span>)
+alg.runRewards = runRewards;
+
+<span class="keyword">end</span>
+
+<span class="keyword">function</span>[chosenAction] = getAgentAction(env, alg, state)
+<span class="comment">% Take the greedy action with probability 1-epsilon</span>
+greedy = binornd(1, 1-alg.eps);
+
+actions = env.validActionsAgent(state);
+
+<span class="comment">% Choose A from S using policy derived from Q (eps-greedy)</span>
+currQ = alg.Q_agent(state(1), state(2), actions);
+
+<span class="comment">% Take the greedy action with probability 1-epsilon</span>
+greedy = binornd(1, 1-alg.eps);
+
+<span class="keyword">if</span> greedy
+    maxQ = max(currQ); <span class="comment">% Find the maximum value</span>
+    maxIdx = find(currQ == maxQ);
+    validActionNum = maxIdx(randi([1,length(maxIdx)]));
+<span class="keyword">else</span>
+    validActionNum = randi([1,length(actions)]);
+<span class="keyword">end</span>
+
+chosenAction = actions(validActionNum);
+
+<span class="keyword">end</span>
+
+<span class="keyword">function</span>[chosenAction] = getAdversaryAction(env, alg, state)
+<span class="comment">% Take the greedy action with probability 1-epsilon</span>
+greedy = binornd(1, 1-alg.eps);
+
+actions = env.validActionsAdversary(state);
+
+<span class="comment">% Choose A from S using policy derived from Q (eps-greedy)</span>
+currQ = alg.Q_adversary(state(1), state(2), state(3), actions);
+
+<span class="comment">% Take the greedy action with probability 1-epsilon</span>
+greedy = binornd(1, 1-alg.eps);
+
+<span class="keyword">if</span> greedy
+    maxQ = max(currQ); <span class="comment">% Find the maximum value</span>
+    maxIdx = find(currQ == maxQ);
+    validActionNum = maxIdx(randi([1,length(maxIdx)]));
+<span class="keyword">else</span>
+    validActionNum = randi([1,length(actions)]);
+<span class="keyword">end</span>
+
+chosenAction = actions(validActionNum);
+
+<span class="keyword">end</span>
+</pre><pre class="codeoutput error">Not enough input arguments.
+
+Error in QLearning (line 3)
+for runNum = 1:1:numRuns
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2018b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+function[alg] = QLearning(env, qAgent, qAdv, trainAgent, trainAdversary, useAdversary, numRuns, numEpisodes)
+runRewards = [];
+for runNum = 1:1:numRuns
+    % Algorithm Parameters
+    alg.alpha = 0.5;
+    alg.eps = 0.1;
+    alg.gamma = 1;  % No discounting
+    
+    alg.Q_agent = qAgent;
+    alg.Q_adversary = qAdv;
+    
+    alg.n = 1;
+    
+    % Start the episode
+    totalRewards = [];
+    runNum
+    for epNum = 1:1:numEpisodes
+        
+        
+        % Initialize and store S0 != terminal
+        state = env.startState;
+        
+        agentStates = [];
+        agentActions = [];
+        agentRewards = [0];
+        
+        advStates = [];
+        advActions = [];
+        advRewards = [0];
+        
+        while 1     
+            % Take action At
+            agentActionNum = getAgentAction(env, alg, state);
+            [agentNextState, agentReward, agentDone] = env.stepAgent(state, agentActionNum);
+            
+            % Adversary's turn to modify the position
+            if agentDone % Do nothing
+                advNextState = agentNextState;
+                advReward = -agentReward;
+                advDone = agentDone;
+            else
+                advActionNum = getAdversaryAction(env, alg, agentNextState);
+                
+                if ~useAdversary
+                   advActionNum = 5;  % No change in agent's pos 
+                end
+                
+                [advNextState, advReward, advDone] = env.stepAdversary(agentNextState, advActionNum);
+            end
+            
+            if agentReward == -100
+                advReward = 100;
+            end
+            
+            % Observe and store the next reward as Rt+1 and the next state as
+            % S_t+1
+            agentStates = [agentStates; state];  % Update with state it's moved to
+            agentStates(end,3) = agentActionNum;
+            advStates = [advStates; agentNextState];
+       
+            agentActions = [agentActions; agentActionNum];
+            agentRewards = [agentRewards; -advReward];            
+            
+            advActions = [advActions; advActionNum];
+            advRewards = [advRewards; advReward];
+            
+            % Agent is now in the advNextState location
+            agentAllowedActions = env.validActionsAgent(advNextState);
+            [agentActionValNext, agentActionIdxNext] = max(alg.Q_agent(advNextState(1), advNextState(2),agentAllowedActions));
+            agentActionNumNext = agentAllowedActions(agentActionIdxNext);
+            
+%             agentActionNumNext = getAgentAction(env,alg,advNextState);
+%             agentActionValNext = alg.Q_agent(advNextState(1), advNextState(2), agentActionNumNext);
+            
+            % Wind's next action depends on the agent's next state
+            moveAgentState = env.stepAgent(advNextState, agentActionNumNext);
+            advAllowedActions = env.validActionsAdversary(moveAgentState);
+            [advActionValNext, advActionIdxNext] = max(alg.Q_adversary(moveAgentState(1), moveAgentState(2),moveAgentState(3),advAllowedActions));
+            
+%             advActionNumNext = getAdversaryAction(env,alg,moveAgentState);
+%             advActionValNext = alg.Q_adversary(moveAgentState(1), moveAgentState(2), moveAgentState(3), advActionNumNext);
+%             
+            
+            if trainAgent
+                
+                
+                alg.Q_agent(state(1), state(2), agentActionNum) = ...
+                    alg.Q_agent(state(1), state(2), agentActionNum) + ...
+                    alg.alpha * ...
+                    (-advReward + alg.gamma * agentActionValNext - ...
+                    alg.Q_agent(state(1), state(2), agentActionNum));
+            end
+            
+            if trainAdversary
+                alg.Q_adversary(agentNextState(1), agentNextState(2), agentNextState(3), advActionNum) = ...
+                    alg.Q_adversary(agentNextState(1), agentNextState(2), agentNextState(3), advActionNum) + ...
+                    alg.alpha * ...
+                    (advReward + alg.gamma * advActionValNext - ...
+                    alg.Q_adversary(agentNextState(1), agentNextState(2), agentNextState(3), advActionNum));
+            end
+            
+            state = advNextState;
+            state(3) = agentActionNum;
+            
+            % Make sure terminal state stays at 0
+            alg.Q_agent(env.layout == 2) = 0;
+            alg.Q_adversary(env.layout == 2) = 0;
+%             alg.Q_agent(env.endState(1), env.endState(2), :) = 0;
+%             alg.Q_adversary(env.endState(1), env.endState(2), :, :) = 0;
+%             
+            if agentDone || advDone
+                agentStates = [agentStates; state];  % Update with state it's moved to
+                agentStates(end,3) = agentActionNum;
+                advStates = [advStates; agentNextState];
+                break
+            end
+        end
+ 
+        
+        totalRewards = [totalRewards; sum(agentRewards)];
+        
+    end
+    
+    runRewards = [runRewards totalRewards];
+end
+alg.runRewards = runRewards;
+figure
+
+plot(mean(runRewards,2))
+title("Q Learning")
+ylim([-100,0])
+save("Results.mat")
+alg.runRewards = runRewards;
+
+end
+
+function[chosenAction] = getAgentAction(env, alg, state)
+% Take the greedy action with probability 1-epsilon
+greedy = binornd(1, 1-alg.eps);
+
+actions = env.validActionsAgent(state);
+
+% Choose A from S using policy derived from Q (eps-greedy)
+currQ = alg.Q_agent(state(1), state(2), actions);
+
+% Take the greedy action with probability 1-epsilon
+greedy = binornd(1, 1-alg.eps);
+
+if greedy
+    maxQ = max(currQ); % Find the maximum value
+    maxIdx = find(currQ == maxQ);
+    validActionNum = maxIdx(randi([1,length(maxIdx)]));
+else
+    validActionNum = randi([1,length(actions)]);
+end
+
+chosenAction = actions(validActionNum);
+
+end
+
+function[chosenAction] = getAdversaryAction(env, alg, state)
+% Take the greedy action with probability 1-epsilon
+greedy = binornd(1, 1-alg.eps);
+
+actions = env.validActionsAdversary(state);
+
+% Choose A from S using policy derived from Q (eps-greedy)
+currQ = alg.Q_adversary(state(1), state(2), state(3), actions);
+
+% Take the greedy action with probability 1-epsilon
+greedy = binornd(1, 1-alg.eps);
+
+if greedy
+    maxQ = max(currQ); % Find the maximum value
+    maxIdx = find(currQ == maxQ);
+    validActionNum = maxIdx(randi([1,length(maxIdx)]));
+else
+    validActionNum = randi([1,length(actions)]);
+end
+
+chosenAction = actions(validActionNum);
+
+end
+##### SOURCE END #####
+--></body></html>
